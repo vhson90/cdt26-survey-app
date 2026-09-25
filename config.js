@@ -7,13 +7,9 @@
  */
 
 window.APP_CONFIG = {
-  // 1. Tùy chọn Firebase Realtime Database (Nhanh nhất, không cần tạo bảng SQL):
-  // Chỉ cần dán link dạng: https://YOUR_PROJECT-default-rtdb.firebaseio.com
-  FIREBASE_DB_URL: "",
-
-  // 2. Tùy chọn Supabase (PostgreSQL + RLS):
-  SUPABASE_URL: "https://YOUR_PROJECT_ID.supabase.co",
-  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  // Supabase Database của Giảng viên (Đã kết nối trực tiếp)
+  SUPABASE_URL: "https://qjowblnmjsykftkyakpw.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_6QZPkLyqMYz-grfg_rP2kw_TFdhVUGE",
 
   // Tên khảo sát hiển thị trung tính
   SURVEY_TITLE: "Khảo sát cách học tập và phối hợp trong lớp",
@@ -62,7 +58,7 @@ window.APP_CONFIG = {
       }
       const localUrl = localStorage.getItem("APP_SUPABASE_URL");
       const localKey = localStorage.getItem("APP_SUPABASE_ANON_KEY");
-      if (localUrl && localKey) {
+      if (localUrl && localKey && !localUrl.includes("YOUR_PROJECT_ID")) {
         window.APP_CONFIG.SUPABASE_URL = localUrl;
         window.APP_CONFIG.SUPABASE_ANON_KEY = localKey;
       }
