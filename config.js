@@ -50,10 +50,16 @@ window.APP_CONFIG = {
 
 // Cho phép nạp cấu hình từ LocalStorage nếu giảng viên cấu hình qua giao diện UI Admin
 (function initSupabaseConfig() {
-  const localUrl = localStorage.getItem("APP_SUPABASE_URL");
-  const localKey = localStorage.getItem("APP_SUPABASE_ANON_KEY");
-  if (localUrl && localKey) {
-    window.APP_CONFIG.SUPABASE_URL = localUrl;
-    window.APP_CONFIG.SUPABASE_ANON_KEY = localKey;
+  try {
+    if (typeof localStorage !== "undefined") {
+      const localUrl = localStorage.getItem("APP_SUPABASE_URL");
+      const localKey = localStorage.getItem("APP_SUPABASE_ANON_KEY");
+      if (localUrl && localKey) {
+        window.APP_CONFIG.SUPABASE_URL = localUrl;
+        window.APP_CONFIG.SUPABASE_ANON_KEY = localKey;
+      }
+    }
+  } catch (err) {
+    console.warn("Không thể truy cập localStorage:", err);
   }
 })();
