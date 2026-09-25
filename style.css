@@ -1,0 +1,87 @@
+/* Custom Styles for Survey App */
+:root {
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-light: #eff6ff;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --bg-page: #f8fafc;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Smooth transitions */
+.transition-smooth {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Radio pill selection effects */
+.likert-btn {
+  transition: all 0.15s ease-in-out;
+  cursor: pointer;
+  user-select: none;
+}
+.likert-btn:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+input[type="radio"]:checked + .likert-btn-content {
+  background-color: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.25), 0 2px 4px -2px rgba(37, 99, 235, 0.25);
+}
+
+/* Choice card styling for situational / forced choice */
+.choice-card {
+  transition: all 0.2s ease;
+  border: 1.5px solid #e2e8f0;
+  cursor: pointer;
+}
+.choice-card:hover {
+  border-color: #93c5fd;
+  background-color: #f8fafc;
+}
+input[type="radio"]:checked + .choice-card-content {
+  border-color: #2563eb;
+  background-color: #eff6ff;
+  box-shadow: 0 0 0 1px #2563eb;
+}
+input[type="radio"]:checked + .choice-card-content .choice-indicator {
+  border-color: #2563eb;
+  background-color: #2563eb;
+  color: white;
+}
+
+/* Progress bar pulse */
+.progress-pulse {
+  background-size: 1rem 1rem;
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.15) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.15) 75%,
+    transparent 75%,
+    transparent
+  );
+  animation: progress-move 1.5s linear infinite;
+}
+
+@keyframes progress-move {
+  0% { background-position: 0 0; }
+  100% { background-position: 1rem 1rem; }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

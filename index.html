@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Khảo sát cách học tập và phối hợp trong lớp</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Supabase JS Client CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 antialiased pb-16">
+
+  <!-- TOP STICKY PROGRESS BAR -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <span class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+          📊
+        </span>
+        <h1 class="text-sm font-semibold text-slate-800 line-clamp-1">
+          Khảo sát học tập & phối hợp nhóm
+        </h1>
+      </div>
+      <div class="text-xs font-medium text-slate-500 flex items-center space-x-2">
+        <span id="progress-text">0/24 câu</span>
+        <span id="progress-percent" class="font-bold text-blue-600">0%</span>
+      </div>
+    </div>
+    <!-- Progress Indicator Bar -->
+    <div class="w-full bg-slate-100 h-1.5">
+      <div id="progress-bar" class="bg-blue-600 h-1.5 transition-all duration-300 w-0"></div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-3xl mx-auto px-4 py-6">
+
+    <!-- WELCOME / INTRO CARD -->
+    <div id="intro-card" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 mb-6">
+      <div class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium mb-3">
+        <span>🎓</span>
+        <span>Học kỳ mới</span>
+      </div>
+      <h2 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mb-2">
+        Khảo sát cách học tập và phối hợp trong lớp
+      </h2>
+      <p class="text-sm text-slate-600 leading-relaxed mb-4">
+        Khảo sát này nhằm tìm hiểu phong cách làm việc, sở thích học tập và cách phối hợp nhóm của sinh viên trong học kỳ này, giúp giảng viên tối ưu hóa phương pháp hỗ trợ lớp học và tổ chức các hoạt động nhóm hiệu quả nhất.
+      </p>
+      <div class="bg-amber-50 border-l-4 border-amber-400 p-3.5 rounded-r-xl">
+        <div class="flex items-start space-x-2.5">
+          <span class="text-amber-600 text-base font-bold">ℹ️</span>
+          <p class="text-xs text-amber-800 leading-relaxed">
+            <strong>Lưu ý:</strong> Khảo sát gồm 100% câu hỏi trắc nghiệm, hoàn thành trong khoảng <strong>5 – 8 phút</strong>. Khảo sát <u>không dùng để chấm điểm hay đánh giá xếp loại học tập</u>. Không có câu trả lời nào là đúng hay sai, bạn hãy chọn phương án phản ánh chân thật nhất thói quen của mình!
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORM WRAPPER -->
+    <form id="survey-form" class="space-y-6">
+
+      <!-- SECTION 1: THÔNG TIN SINH VIÊN -->
+      <section class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+        <div class="border-b border-slate-100 pb-3 mb-5">
+          <h3 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+            <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs flex items-center justify-center font-bold">1</span>
+            <span>Thông tin sinh viên</span>
+          </h3>
+          <p class="text-xs text-slate-500 mt-0.5">Vui lòng cung cấp chính xác để giảng viên liên hệ khi cần thiết.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- MSSV -->
+          <div>
+            <label for="mssv" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+              Mã số sinh viên (MSSV) <span class="text-rose-500">*</span>
+            </label>
+            <input 
+              type="text" 
+              id="mssv" 
+              name="mssv" 
+              required 
+              placeholder="VD: 2112001" 
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 text-sm font-medium transition-all"
+            >
+            <p id="mssv-warning" class="hidden text-xs text-rose-500 mt-1 font-medium"></p>
+          </div>
+
+          <!-- Họ và tên -->
+          <div>
+            <label for="ho_ten" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+              Họ và tên <span class="text-rose-500">*</span>
+            </label>
+            <input 
+              type="text" 
+              id="ho_ten" 
+              name="ho_ten" 
+              required 
+              placeholder="VD: Nguyễn Văn An" 
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 text-sm font-medium transition-all"
+            >
+          </div>
+
+          <!-- Lớp sinh hoạt / Lớp học phần -->
+          <div>
+            <label for="lop" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+              Lớp học phần / Lớp sinh hoạt <span class="text-rose-500">*</span>
+            </label>
+            <div class="relative">
+              <input 
+                type="text" 
+                id="lop" 
+                name="lop" 
+                list="class-suggestions"
+                required 
+                placeholder="VD: D21_TH01 hoặc nhập tên lớp" 
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 text-sm font-medium transition-all"
+              >
+              <datalist id="class-suggestions"></datalist>
+            </div>
+          </div>
+
+          <!-- Số điện thoại -->
+          <div>
+            <label for="so_dien_thoai" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+              Số điện thoại liên hệ <span class="text-rose-500">*</span>
+            </label>
+            <input 
+              type="tel" 
+              id="so_dien_thoai" 
+              name="so_dien_thoai" 
+              required 
+              placeholder="VD: 0912345678" 
+              pattern="[0-9]{9,11}"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 text-sm font-medium transition-all"
+            >
+          </div>
+
+          <!-- Email -->
+          <div>
+            <label for="email" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+              Địa chỉ Email <span class="text-rose-500">*</span>
+            </label>
+            <input 
+              type="email" 
+              id="email" 
+              name="email" 
+              required 
+              placeholder="VD: an.nv@student.edu.vn" 
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 text-sm font-medium transition-all"
+            >
+          </div>
+
+          <!-- Kênh liên hệ ưu tiên -->
+          <div>
+            <label for="kenh_lien_he" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+              Kênh liên hệ thuận tiện nhất <span class="text-rose-500">*</span>
+            </label>
+            <select 
+              id="kenh_lien_he" 
+              name="kenh_lien_he" 
+              required 
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 text-sm font-medium transition-all"
+            >
+              <option value="" disabled selected>-- Chọn kênh bạn phản hồi nhanh nhất --</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 2: CÂU HỎI KHẢO SÁT -->
+      <section class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+        <div class="border-b border-slate-100 pb-3 mb-6">
+          <h3 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+            <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs flex items-center justify-center font-bold">2</span>
+            <span>Nội dung khảo sát (24 câu hỏi)</span>
+          </h3>
+          <p class="text-xs text-slate-500 mt-0.5">
+            Các câu hỏi đã được trộn thứ tự ngẫu nhiên. Vui lòng trả lời đầy đủ từng câu.
+          </p>
+        </div>
+
+        <!-- Dynamic Questions List Container -->
+        <div id="questions-container" class="space-y-6">
+          <div class="flex items-center justify-center py-12 text-slate-400 space-x-2">
+            <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            <span class="text-sm">Đang tải câu hỏi...</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- SUBMIT BUTTON & STATUS -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 text-center">
+        <div id="unanswered-warning" class="hidden mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-semibold">
+          ⚠️ Bạn còn câu hỏi chưa hoàn thành. Hãy kiểm tra các câu được đánh dấu màu đỏ phía trên.
+        </div>
+
+        <button 
+          type="submit" 
+          id="submit-btn"
+          class="w-full sm:w-auto min-w-[240px] px-8 py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-base rounded-xl shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center mx-auto space-x-2"
+        >
+          <span id="btn-text">Gửi phiếu khảo sát</span>
+          <span id="btn-spinner" class="hidden">
+            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+          </span>
+        </button>
+        <p class="text-[11px] text-slate-400 mt-3">
+          Thông tin được lưu trữ bảo mật và chỉ sử dụng cho mục đích tổ chức học tập của lớp.
+        </p>
+      </div>
+
+    </form>
+
+    <!-- SUCCESS THANK YOU SCREEN (Hidden until submitted) -->
+    <div id="thankyou-card" class="hidden bg-white rounded-3xl p-8 sm:p-12 shadow-sm border border-slate-200 text-center animate-fade-in my-8">
+      <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner mb-5">
+        ✓
+      </div>
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-3">
+        Cảm ơn bạn đã hoàn thành khảo sát!
+      </h2>
+      <p class="text-slate-600 text-sm sm:text-base max-w-lg mx-auto leading-relaxed mb-6">
+        Phiếu phản hồi của bạn đã được ghi nhận thành công vào hệ thống. Những đóng góp này sẽ giúp giảng viên xây dựng kế hoạch học tập, thảo luận và hỗ trợ sinh viên trong lớp một cách tốt nhất trong suốt học kỳ.
+      </p>
+      <div class="inline-flex items-center space-x-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-500">
+        <span>🕒 Thời gian ghi nhận:</span>
+        <span id="submitted-time" class="font-semibold text-slate-700"></span>
+      </div>
+      <div class="mt-8">
+        <a 
+          href="index.html" 
+          class="inline-block text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline"
+        >
+          Trở về đầu trang
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="max-w-3xl mx-auto px-4 pt-4 text-center text-xs text-slate-400">
+    <p>© 2026 Hệ thống khảo sát học tập & phối hợp lớp học.</p>
+    <div class="mt-1">
+      <a href="admin.html" class="text-slate-400 hover:text-slate-600 hover:underline">Dành cho Giảng viên (Admin)</a>
+    </div>
+  </footer>
+
+  <!-- LOAD APPLICATION SCRIPTS -->
+  <script src="questions.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
