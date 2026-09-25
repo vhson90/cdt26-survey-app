@@ -131,8 +131,31 @@
     showAuthScreen();
   }
 
-  // 5. Tải dữ liệu danh sách khảo sát từ Supabase hoặc Local Demo
+  // 5. Tải dữ liệu danh sách khảo sát từ Firebase, Supabase hoặc Local Demo
   async function loadSubmissions() {
+    // 5.1 Ưu tiên nạp từ Firebase Realtime Database nếu có cấu hình
+    if (config.FIREBASE_DB_URL) {
+      try {
+        const fbUrl = config.FIREBASE_DB_URL.replace(/\/$/, "");
+        const res = await fetch(`${fbUrl}/submissions.json`);
+        const data = await res.json();
+        if (data) {
+          currentSubmissions = Object.keys(data).map(k => ({
+            id: k,
+            ...data[k]
+          })).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        } else {
+          currentSubmissions = [];
+        }
+        populateClassFilterOptions();
+        updateDashboardStats();
+        applyFilters();
+        return;
+      } catch (err) {
+        console.error("Lỗi nạp từ Firebase:", err);
+      }
+    }
+
     const client = getSupabaseClient();
     const isSupabaseConfigured = client && config.SUPABASE_URL && !config.SUPABASE_URL.includes("YOUR_PROJECT_ID");
 
@@ -580,6 +603,36 @@
     saveBtn.disabled = true;
     saveBtn.textContent = "Đang lưu...";
 
+    if (config.FIREBASE_DB_URL) {
+      try {
+        const fbUrl = config.FIREBASE_DB_URL.replace(/\/$/, "");
+        await fetch(`${fbUrl}/submissions/${activeStudent.id}.json`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lecturer_notes: notes,
+            tagged_for_review: tagged
+          })
+        });
+        activeStudent.lecturer_notes = notes;
+        activeStudent.tagged_for_review = tagged;
+        const found = currentSubmissions.find(s => s.id === activeStudent.id);
+        if (found) {
+          found.lecturer_notes = notes;
+          found.tagged_for_review = tagged;
+        }
+        updateDashboardStats();
+        applyFilters();
+        alert("Đã lưu ghi chú thành công!");
+      } catch (e) {
+        alert("Lỗi lưu Firebase: " + e.message);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Lưu ghi chú";
+      }
+      return;
+    }
+
     if (!isSupabaseConfigured) {
       activeStudent.lecturer_notes = notes;
       activeStudent.tagged_for_review = tagged;
@@ -633,6 +686,24 @@
 
   // 12. Chuyển đổi nhanh trạng thái "Cần tìm hiểu thêm" từ bảng
   window.toggleReviewTag = async function (studentId, newStatus) {
+    if (config.FIREBASE_DB_URL) {
+      try {
+        const fbUrl = config.FIREBASE_DB_URL.replace(/\/$/, "");
+        await fetch(`${fbUrl}/submissions/${studentId}.json`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tagged_for_review: newStatus })
+        });
+        const found = currentSubmissions.find(s => s.id === studentId);
+        if (found) found.tagged_for_review = newStatus;
+        updateDashboardStats();
+        applyFilters();
+      } catch (e) {
+        console.error("Lỗi cập nhật Firebase:", e);
+      }
+      return;
+    }
+
     const client = getSupabaseClient();
     const isSupabaseConfigured = client && config.SUPABASE_URL && !config.SUPABASE_URL.includes("YOUR_PROJECT_ID");
 
@@ -726,11 +797,14 @@
     document.body.removeChild(link);
   }
 
-  // 14. Quản lý Modal Cấu hình nhanh Supabase
+  // 14. Quản lý Modal Cấu hình nhanh
   window.toggleConfigModal = function (show) {
     const modal = document.getElementById("config-modal");
     if (!modal) return;
     if (show) {
+      const fbInput = document.getElementById("config-firebase-input");
+      if (fbInput) fbInput.value = localStorage.getItem("APP_FIREBASE_URL") || config.FIREBASE_DB_URL || "";
+
       document.getElementById("config-url-input").value = localStorage.getItem("APP_SUPABASE_URL") || config.SUPABASE_URL || "";
       document.getElementById("config-key-input").value = localStorage.getItem("APP_SUPABASE_ANON_KEY") || config.SUPABASE_ANON_KEY || "";
       modal.classList.remove("hidden");
@@ -740,23 +814,26 @@
   };
 
   function handleSaveConfig() {
-    const url = document.getElementById("config-url-input").value.trim();
-    const key = document.getElementById("config-key-input").value.trim();
+    const fbUrl = document.getElementById("config-firebase-input")?.value.trim();
+    const url = document.getElementById("config-url-input")?.value.trim();
+    const key = document.getElementById("config-key-input")?.value.trim();
 
-    if (!url || !key) {
-      alert("Vui lòng nhập đầy đủ URL và Key!");
-      return;
+    if (fbUrl) {
+      localStorage.setItem("APP_FIREBASE_URL", fbUrl);
+      window.APP_CONFIG.FIREBASE_DB_URL = fbUrl;
     }
 
-    localStorage.setItem("APP_SUPABASE_URL", url);
-    localStorage.setItem("APP_SUPABASE_ANON_KEY", key);
-    window.APP_CONFIG.SUPABASE_URL = url;
-    window.APP_CONFIG.SUPABASE_ANON_KEY = key;
-    supabase = null; // Reset client
+    if (url && key) {
+      localStorage.setItem("APP_SUPABASE_URL", url);
+      localStorage.setItem("APP_SUPABASE_ANON_KEY", key);
+      window.APP_CONFIG.SUPABASE_URL = url;
+      window.APP_CONFIG.SUPABASE_ANON_KEY = key;
+      supabase = null; // Reset client
+    }
 
-    alert("Đã lưu cấu hình Supabase! Hệ thống sẽ khởi động lại kết nối.");
+    alert("Đã lưu cấu hình cơ sở dữ liệu! Hệ thống sẽ tải lại dữ liệu mới.");
     toggleConfigModal(false);
-    checkAuthSession();
+    loadSubmissions();
   }
 
   // Helpers

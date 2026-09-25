@@ -395,7 +395,21 @@
         created_at: new Date().toISOString()
       };
 
-      if (isSupabaseConfigured) {
+      if (config.FIREBASE_DB_URL) {
+        // Gửi trực tiếp lên Firebase Realtime Database
+        try {
+          const fbUrl = config.FIREBASE_DB_URL.replace(/\/$/, "");
+          const fbRes = await fetch(`${fbUrl}/submissions.json`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          if (!fbRes.ok) throw new Error("Lỗi lưu Firebase: " + fbRes.statusText);
+        } catch (fbErr) {
+          console.error("Lỗi Firebase:", fbErr);
+          saveToLocalStorage(payload);
+        }
+      } else if (isSupabaseConfigured) {
         const { error: insertErr } = await client
           .from("submissions")
           .insert([payload]);
@@ -410,7 +424,7 @@
           }
         }
       } else {
-        // Lưu vào LocalStorage khi chưa kết nối Supabase
+        // Lưu vào LocalStorage khi chưa kết nối database đám mây
         saveToLocalStorage(payload);
       }
 

@@ -7,7 +7,11 @@
  */
 
 window.APP_CONFIG = {
-  // Thay thế bằng URL và Anon Key lấy từ Supabase Dashboard -> Project Settings -> API
+  // 1. Tùy chọn Firebase Realtime Database (Nhanh nhất, không cần tạo bảng SQL):
+  // Chỉ cần dán link dạng: https://YOUR_PROJECT-default-rtdb.firebaseio.com
+  FIREBASE_DB_URL: "",
+
+  // 2. Tùy chọn Supabase (PostgreSQL + RLS):
   SUPABASE_URL: "https://YOUR_PROJECT_ID.supabase.co",
   SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
 
@@ -52,6 +56,10 @@ window.APP_CONFIG = {
 (function initSupabaseConfig() {
   try {
     if (typeof localStorage !== "undefined") {
+      const localFb = localStorage.getItem("APP_FIREBASE_URL");
+      if (localFb) {
+        window.APP_CONFIG.FIREBASE_DB_URL = localFb;
+      }
       const localUrl = localStorage.getItem("APP_SUPABASE_URL");
       const localKey = localStorage.getItem("APP_SUPABASE_ANON_KEY");
       if (localUrl && localKey) {

@@ -360,8 +360,26 @@
         <button onclick="toggleConfigModal(false)" class="text-slate-400 hover:text-slate-600 text-sm">✕</button>
       </div>
       <p class="text-xs text-slate-500">
-        Bạn có thể cấu hình URL và Public Anon Key trực tiếp tại đây để lưu trên trình duyệt của bạn mà không cần chỉnh sửa code.
+        Bạn có thể kết nối Cơ sở dữ liệu đám mây trực tiếp tại đây:
       </p>
+      
+      <!-- LỰA CHỌN 1: FIREBASE REALTIME DB (DỄ NHẤT) -->
+      <div class="p-3 bg-amber-50 rounded-xl border border-amber-200">
+        <label class="block text-xs font-bold text-amber-900 mb-1">
+          🔥 Firebase Realtime DB (Khuyên dùng - Nhanh nhất, Không cần SQL)
+        </label>
+        <input 
+          type="text" 
+          id="config-firebase-input" 
+          placeholder="https://ten-du-an-default-rtdb.firebaseio.com" 
+          class="w-full px-3 py-2 text-xs border rounded-xl bg-white"
+        >
+        <p class="text-[10px] text-amber-700 mt-1">Chỉ cần dán link Database từ Firebase Console vào đây là lưu ngay.</p>
+      </div>
+
+      <div class="text-center text-xs font-bold text-slate-400">--- HOẶC ---</div>
+
+      <!-- LỰA CHỌN 2: SUPABASE -->
       <div>
         <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Supabase Project URL</label>
         <input 
