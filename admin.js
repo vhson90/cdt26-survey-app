@@ -70,7 +70,32 @@
     }
   }
 
-  // 3. Xử lý Đăng nhập
+  let isRegisterMode = false;
+
+  function setAuthMode(register) {
+    isRegisterMode = register;
+    const tabLogin = document.getElementById("tab-login-btn");
+    const tabRegister = document.getElementById("tab-register-btn");
+    const btnText = document.getElementById("login-btn-text");
+    const errorDiv = document.getElementById("login-error");
+    if (errorDiv) errorDiv.classList.add("hidden");
+
+    if (register) {
+      tabRegister?.classList.add("bg-white", "shadow-sm", "font-bold", "text-slate-800");
+      tabRegister?.classList.remove("text-slate-500");
+      tabLogin?.classList.remove("bg-white", "shadow-sm", "font-bold", "text-slate-800");
+      tabLogin?.classList.add("text-slate-500");
+      if (btnText) btnText.textContent = "Đăng ký tài khoản Giảng viên";
+    } else {
+      tabLogin?.classList.add("bg-white", "shadow-sm", "font-bold", "text-slate-800");
+      tabLogin?.classList.remove("text-slate-500");
+      tabRegister?.classList.remove("bg-white", "shadow-sm", "font-bold", "text-slate-800");
+      tabRegister?.classList.add("text-slate-500");
+      if (btnText) btnText.textContent = "Đăng nhập Bảng điều khiển";
+    }
+  }
+
+  // 3. Xử lý Đăng nhập / Đăng ký
   async function handleLogin(e) {
     e.preventDefault();
     const email = document.getElementById("admin-email").value.trim();
@@ -83,6 +108,7 @@
     errorDiv.classList.add("hidden");
     errorDiv.textContent = "";
 
+    const client = getSupabaseClient();
     const isSupabaseConfigured = client && config.SUPABASE_URL && !config.SUPABASE_URL.includes("YOUR_PROJECT_ID");
 
     if (!isSupabaseConfigured) {
@@ -96,20 +122,43 @@
 
     loginBtn.disabled = true;
     spinner.classList.remove("hidden");
-    btnText.textContent = "Đang xác thực...";
+    btnText.textContent = isRegisterMode ? "Đang tạo tài khoản..." : "Đang xác thực...";
 
     try {
-      const { data, error } = await client.auth.signInWithPassword({
-        email: email,
-        password: password
-      });
+      if (isRegisterMode) {
+        // ĐĂNG KÝ TÀI KHOẢN MỚI
+        const { data, error } = await client.auth.signUp({
+          email: email,
+          password: password
+        });
 
-      if (error) {
-        errorDiv.textContent = "Đăng nhập thất bại: " + (error.message || "Sai tài khoản hoặc mật khẩu");
-        errorDiv.classList.remove("hidden");
-      } else if (data && data.user) {
-        showDashboard(data.user);
-        loadSubmissions();
+        if (error) {
+          errorDiv.textContent = "Đăng ký không thành công: " + error.message;
+          errorDiv.classList.remove("hidden");
+        } else if (data && data.user) {
+          alert("Tạo tài khoản Giảng viên thành công! Đang chuyển vào Bảng điều khiển...");
+          showDashboard(data.user);
+          loadSubmissions();
+        }
+      } else {
+        // ĐĂNG NHẬP
+        const { data, error } = await client.auth.signInWithPassword({
+          email: email,
+          password: password
+        });
+
+        if (error) {
+          errorDiv.innerHTML = `
+            <div><strong>Đăng nhập không thành công:</strong> ${error.message}</div>
+            <div class="mt-1 pt-1 border-t border-rose-200">
+              💡 <em>Lần đầu tiên sử dụng?</em> Hãy bấm vào tab <strong>"Đăng ký mới (1 lần đầu)"</strong> ở trên để tạo tài khoản trong 3 giây!
+            </div>
+          `;
+          errorDiv.classList.remove("hidden");
+        } else if (data && data.user) {
+          showDashboard(data.user);
+          loadSubmissions();
+        }
       }
     } catch (err) {
       errorDiv.textContent = "Lỗi kết nối: " + err.message;
@@ -117,7 +166,7 @@
     } finally {
       loginBtn.disabled = false;
       spinner.classList.add("hidden");
-      btnText.textContent = "Đang nhập Bảng điều khiển";
+      btnText.textContent = isRegisterMode ? "Đăng ký tài khoản Giảng viên" : "Đăng nhập Bảng điều khiển";
     }
   }
 
@@ -855,6 +904,8 @@
   // 15. Khởi tạo sự kiện khi DOM nạp xong
   document.addEventListener("DOMContentLoaded", () => {
     // Auth listeners
+    document.getElementById("tab-login-btn")?.addEventListener("click", () => setAuthMode(false));
+    document.getElementById("tab-register-btn")?.addEventListener("click", () => setAuthMode(true));
     document.getElementById("login-form")?.addEventListener("submit", handleLogin);
     document.getElementById("logout-btn")?.addEventListener("click", handleLogout);
     document.getElementById("refresh-btn")?.addEventListener("click", loadSubmissions);
