@@ -380,7 +380,6 @@
 
       // 7.3 Chuẩn bị payload
       const payload = {
-        id: "sub_" + Date.now(),
         mssv: mssvVal,
         ho_ten: hoTenVal,
         lop: lopVal,
@@ -454,6 +453,7 @@
 
   function saveToLocalStorage(payload) {
     try {
+      if (!payload.id) payload.id = "sub_" + Date.now();
       const existing = JSON.parse(localStorage.getItem("DEMO_SUBMISSIONS") || "[]");
       existing.unshift(payload);
       localStorage.setItem("DEMO_SUBMISSIONS", JSON.stringify(existing));
