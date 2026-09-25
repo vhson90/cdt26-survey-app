@@ -50,6 +50,16 @@
       } else {
         showAuthScreen();
       }
+
+      // Giữ phiên đăng nhập liên tục (tự động refresh token, không bao giờ bị văng trừ khi bấm Đăng xuất)
+      client.auth.onAuthStateChange((event, newSession) => {
+        if (event === "SIGNED_IN" && newSession?.user) {
+          showDashboard(newSession.user);
+          loadSubmissions();
+        } else if (event === "SIGNED_OUT") {
+          showAuthScreen();
+        }
+      });
     } catch (err) {
       console.warn("Chưa đăng nhập:", err);
       showAuthScreen();

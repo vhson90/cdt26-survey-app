@@ -333,15 +333,16 @@
     const kenhVal = kenhInput.value;
     const sessionCode = "2026_HK1";
 
-    // Kiểm tra cấu hình Supabase
-    const isSupabaseConfigured = client && config.SUPABASE_URL && !config.SUPABASE_URL.includes("YOUR_PROJECT_ID");
-
     // Bật trạng thái Loading
     submitBtn.disabled = true;
     btnText.textContent = "Đang gửi dữ liệu...";
     btnSpinner.classList.remove("hidden");
 
     try {
+      // Khởi tạo Supabase client
+      const client = getSupabaseClient();
+      const isSupabaseConfigured = client && config.SUPABASE_URL && !config.SUPABASE_URL.includes("YOUR_PROJECT_ID");
+
       // 7.1 Kiểm tra chống trùng lặp MSSV
       if (isSupabaseConfigured) {
         const { data: alreadySubmitted, error: checkErr } = await client.rpc("check_mssv_submitted", {
@@ -414,13 +415,16 @@
           .insert([payload]);
 
         if (insertErr) {
+          console.error("Lỗi gửi dữ liệu Supabase:", insertErr);
           if (insertErr.code === "23505") {
             alert(`Mã số sinh viên ${mssvVal} đã được nộp trước đó.`);
           } else {
-            console.error("Lỗi Supabase:", insertErr);
-            // Lưu dự phòng vào local nếu Supabase gặp sự cố mạng
-            saveToLocalStorage(payload);
+            alert("Không thể lưu bài nộp: " + (insertErr.message || JSON.stringify(insertErr)));
           }
+          submitBtn.disabled = false;
+          btnText.textContent = "Gửi phiếu khảo sát";
+          btnSpinner.classList.add("hidden");
+          return;
         }
       } else {
         // Lưu vào LocalStorage khi chưa kết nối database đám mây
