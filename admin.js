@@ -895,6 +895,22 @@
     loadSubmissions();
   }
 
+  // Helper Functions
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function escapeCSV(str) {
+    if (!str) return "";
+    return String(str).replace(/"/g, '""');
+  }
+
   // =========================================================================
   // 16. QUẢN LÝ BÀI KIỂM TRA TRẮC NGHIỆM XƯỞNG HÀN (QUIZ MODULE)
   // =========================================================================
@@ -973,7 +989,7 @@
       opt.textContent = `Lớp: ${c}`;
       select.appendChild(opt);
     });
-    select.value = classes.includes(currentVal) ? currentVal : "ALL";
+    select.value = (currentVal && currentVal !== "ALL" && classes.includes(currentVal)) ? currentVal : "ALL";
   }
 
   function applyQuizFilters() {
