@@ -133,6 +133,48 @@
     <!-- CONTENT BODY -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
+      <!-- MODULE NAVIGATION TABS -->
+      <div class="flex flex-wrap items-center justify-between border-b border-slate-200 pb-3 gap-3">
+        <div class="flex items-center space-x-2">
+          <button 
+            id="tab-btn-survey" 
+            type="button"
+            onclick="switchAdminModule('survey')"
+            class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-blue-600 text-white shadow-sm transition-all"
+          >
+            📊 1. Khảo sát phong cách nhóm (24 câu)
+          </button>
+          <button 
+            id="tab-btn-quiz" 
+            type="button"
+            onclick="switchAdminModule('quiz')"
+            class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-600 hover:text-blue-600 border border-slate-200 transition-all"
+          >
+            ⚡ 2. Điểm trắc nghiệm xưởng hàn (40 câu)
+          </button>
+        </div>
+        
+        <div class="flex items-center space-x-2.5 text-xs">
+          <span class="text-slate-500 hidden sm:inline">Mã thi tại xưởng:</span>
+          <span class="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800 font-mono font-bold tracking-wider border border-amber-200">
+            0210CDT3
+          </span>
+          <a 
+            href="quiz.html" 
+            target="_blank" 
+            class="inline-flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 font-bold hover:bg-blue-100 transition-all"
+          >
+            <span>Mở bài thi</span>
+            <span>↗</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- VIEW 1: MODULE KHẢO SÁT PHONG CÁCH NHÓM       -->
+      <!-- ============================================== -->
+      <div id="module-survey-view" class="space-y-6">
+
       <!-- BANNER LƯU Ý SƯ PHẠM (ĐẠO ĐỨC & KHÔNG TỰ ĐỘNG ẤN ĐỊNH) -->
       <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-2xl shadow-sm flex items-start space-x-3">
         <span class="text-xl text-amber-600 mt-0.5">💡</span>
@@ -243,6 +285,135 @@
           </table>
         </div>
       </div>
+      </div> <!-- Đóng #module-survey-view -->
+
+      <!-- ============================================== -->
+      <!-- VIEW 2: MODULE ĐIỂM TRẮC NGHIỆM XƯỞNG HÀN     -->
+      <!-- ============================================== -->
+      <div id="module-quiz-view" class="hidden space-y-6">
+
+        <!-- THÔNG BÁO TỔNG QUAN HỌC PHẦN -->
+        <div class="bg-blue-50 border-l-4 border-blue-600 p-4 rounded-r-2xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-start space-x-3">
+            <span class="text-xl text-blue-600 mt-0.5">⚡</span>
+            <div class="text-xs sm:text-sm text-blue-900 leading-relaxed">
+              <strong>Hệ thống quản lý điểm thi thực hành:</strong> Bài trắc nghiệm 40 câu - 30 phút theo Bài 1 (An toàn xưởng) và Bài 2 (Thiết bị, ký hiệu que hàn). Mật mã vào thi: <strong class="font-mono bg-white px-2 py-0.5 rounded border border-blue-300">0210CDT3</strong>. Điểm số được chấm tự động theo thang 10.
+            </div>
+          </div>
+          <button 
+            id="quiz-export-csv-btn" 
+            class="shrink-0 inline-flex items-center space-x-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-all"
+          >
+            <span>📥</span>
+            <span>Xuất bảng điểm CSV</span>
+          </button>
+        </div>
+
+        <!-- THẺ THỐNG KÊ KẾT QUẢ THI -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Tổng sinh viên đã thi -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tổng bài thi đã nộp</p>
+            <div class="flex items-baseline justify-between mt-2">
+              <h3 id="quiz-stat-total" class="text-2xl sm:text-3xl font-extrabold text-slate-900">0</h3>
+              <span class="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md font-medium">Thí sinh</span>
+            </div>
+          </div>
+
+          <!-- Điểm trung bình -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Điểm trung bình lớp</p>
+            <div class="flex items-baseline justify-between mt-2">
+              <h3 id="quiz-stat-avg" class="text-2xl sm:text-3xl font-extrabold text-indigo-600">0.0</h3>
+              <span class="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-md font-medium">/ 10</span>
+            </div>
+          </div>
+
+          <!-- Tỷ lệ Đạt (>= 5.0) -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tỷ lệ Đạt (&ge; 5.0)</p>
+            <div class="flex items-baseline justify-between mt-2">
+              <h3 id="quiz-stat-passed" class="text-2xl sm:text-3xl font-extrabold text-emerald-600">0%</h3>
+              <span class="text-xs px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-md font-medium">Đạt chuẩn</span>
+            </div>
+          </div>
+
+          <!-- Điểm cao nhất -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Điểm cao nhất</p>
+            <div class="flex items-baseline justify-between mt-2">
+              <h3 id="quiz-stat-highest" class="text-2xl sm:text-3xl font-extrabold text-amber-500">0.0</h3>
+              <span class="text-xs px-2 py-0.5 bg-amber-50 text-amber-700 rounded-md font-medium">Thủ khoa</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- BẢNG BỘ LỌC & DANH SÁCH ĐIỂM THI -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <!-- Thanh tìm kiếm & lọc -->
+          <div class="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div class="relative flex-1 max-w-md">
+              <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                🔍
+              </span>
+              <input 
+                type="text" 
+                id="quiz-search-input" 
+                placeholder="Tìm theo Họ tên hoặc MSSV..." 
+                class="w-full pl-10 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all"
+              >
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <!-- Lọc Lớp -->
+              <select 
+                id="quiz-class-filter" 
+                class="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-700 font-medium"
+              >
+                <option value="ALL">Tất cả các lớp</option>
+              </select>
+
+              <!-- Sắp xếp -->
+              <select 
+                id="quiz-sort-select" 
+                class="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-700 font-medium"
+              >
+                <option value="score_desc">Điểm: Cao nhất trước</option>
+                <option value="score_asc">Điểm: Thấp nhất trước</option>
+                <option value="time_desc">Nộp mới nhất trước</option>
+                <option value="name_asc">Tên sinh viên (A-Z)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Bảng danh sách điểm thi -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs whitespace-nowrap">
+              <thead class="bg-slate-50/75 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
+                <tr>
+                  <th class="py-3.5 px-4">STT</th>
+                  <th class="py-3.5 px-4">MSSV</th>
+                  <th class="py-3.5 px-4">Họ và tên</th>
+                  <th class="py-3.5 px-4">Lớp</th>
+                  <th class="py-3.5 px-4 text-center">Điểm (Thang 10)</th>
+                  <th class="py-3.5 px-4 text-center">Số câu đúng</th>
+                  <th class="py-3.5 px-4 text-center">Thời gian làm</th>
+                  <th class="py-3.5 px-4 text-center">Xếp loại</th>
+                  <th class="py-3.5 px-4 text-right">Ngày giờ nộp</th>
+                </tr>
+              </thead>
+              <tbody id="quiz-table-body" class="divide-y divide-slate-100 font-normal">
+                <tr>
+                  <td colspan="9" class="py-12 text-center text-slate-400">
+                    Đang tải danh sách điểm kiểm tra...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div> <!-- Đóng #module-quiz-view -->
 
     </main>
   </div>

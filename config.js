@@ -16,13 +16,19 @@ window.APP_CONFIG = {
   SURVEY_SUBTITLE: "Dành cho sinh viên tham gia học phần - Thời gian hoàn thành: 5 - 8 phút",
   SURVEY_NOTE: "Khảo sát này nhằm tìm hiểu phong cách làm việc nhóm, sở thích học tập và tương tác trong lớp để giảng viên tối ưu hóa phương pháp hỗ trợ lớp học. Khảo sát KHÔNG dùng để chấm điểm hay đánh giá xếp loại học tập của bạn.",
 
+  // Cấu hình bài trắc nghiệm thực hành hàn
+  QUIZ_PASSCODE: "0210CDT3", // Mật mã 8 ký tự GV cấp tại lớp
+  QUIZ_DURATION_MINUTES: 30, // Thời gian làm bài 30 phút
+  QUIZ_TOTAL_QUESTIONS: 40,  // Tổng số 40 câu hỏi
+
   // Danh sách gợi ý lớp (nếu sinh viên thuộc lớp khác vẫn có thể nhập)
   DEFAULT_CLASSES: [
+    "26C1-CĐT1",
+    "26C1-CĐT2",
+    "26C1-CDT1",
     "D21_TH01",
     "D21_TH02",
     "D22_CNTT01",
-    "D22_CNTT02",
-    "D23_PM01",
     "Lớp khác"
   ],
 

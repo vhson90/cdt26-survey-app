@@ -895,20 +895,244 @@
     loadSubmissions();
   }
 
-  // Helpers
-  function escapeHtml(str) {
-    if (!str) return "";
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
+  // =========================================================================
+  // 16. QUẢN LÝ BÀI KIỂM TRA TRẮC NGHIỆM XƯỞNG HÀN (QUIZ MODULE)
+  // =========================================================================
+  let currentQuizSubmissions = [];
+  let filteredQuizSubmissions = [];
+
+  window.switchAdminModule = function (mode) {
+    const surveyView = document.getElementById("module-survey-view");
+    const quizView = document.getElementById("module-quiz-view");
+    const tabSurvey = document.getElementById("tab-btn-survey");
+    const tabQuiz = document.getElementById("tab-btn-quiz");
+
+    if (mode === "quiz") {
+      surveyView?.classList.add("hidden");
+      quizView?.classList.remove("hidden");
+      tabQuiz?.classList.remove("bg-white", "text-slate-600");
+      tabQuiz?.classList.add("bg-blue-600", "text-white");
+      tabSurvey?.classList.remove("bg-blue-600", "text-white");
+      tabSurvey?.classList.add("bg-white", "text-slate-600");
+      loadQuizSubmissions();
+    } else {
+      quizView?.classList.add("hidden");
+      surveyView?.classList.remove("hidden");
+      tabSurvey?.classList.remove("bg-white", "text-slate-600");
+      tabSurvey?.classList.add("bg-blue-600", "text-white");
+      tabQuiz?.classList.remove("bg-blue-600", "text-white");
+      tabQuiz?.classList.add("bg-white", "text-slate-600");
+    }
+  };
+
+  async function loadQuizSubmissions() {
+    const client = getSupabaseClient();
+    let data = [];
+
+    if (client) {
+      try {
+        const { data: remoteData, error } = await client
+          .from("quiz_submissions")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (!error && remoteData) {
+          data = remoteData;
+        } else if (error) {
+          console.warn("Lỗi tải quiz_submissions từ Supabase:", error);
+        }
+      } catch (err) {
+        console.warn("Lỗi ngoại lệ Supabase Quiz:", err);
+      }
+    }
+
+    // Gộp dữ liệu local nếu có
+    const local = JSON.parse(localStorage.getItem("DEMO_QUIZ_SUBMISSIONS") || "[]");
+    const existingMssv = new Set(data.map(d => d.mssv.toUpperCase()));
+    local.forEach(l => {
+      if (!existingMssv.has(l.mssv.toUpperCase())) {
+        data.push(l);
+      }
+    });
+
+    currentQuizSubmissions = data;
+    populateQuizClassFilter();
+    applyQuizFilters();
   }
 
-  function escapeCSV(str) {
-    if (!str) return "";
-    return String(str).replace(/"/g, '""');
+  function populateQuizClassFilter() {
+    const select = document.getElementById("quiz-class-filter");
+    if (!select) return;
+    const currentVal = select.value;
+    const classes = Array.from(new Set(currentQuizSubmissions.map(s => s.lop))).filter(Boolean).sort();
+
+    select.innerHTML = '<option value="ALL">Tất cả các lớp</option>';
+    classes.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c;
+      opt.textContent = `Lớp: ${c}`;
+      select.appendChild(opt);
+    });
+    select.value = classes.includes(currentVal) ? currentVal : "ALL";
+  }
+
+  function applyQuizFilters() {
+    const searchVal = (document.getElementById("quiz-search-input")?.value || "").trim().toLowerCase();
+    const classVal = document.getElementById("quiz-class-filter")?.value || "ALL";
+    const sortVal = document.getElementById("quiz-sort-select")?.value || "score_desc";
+
+    let list = [...currentQuizSubmissions];
+
+    // Tìm kiếm
+    if (searchVal) {
+      list = list.filter(s =>
+        (s.ho_ten || "").toLowerCase().includes(searchVal) ||
+        (s.mssv || "").toLowerCase().includes(searchVal)
+      );
+    }
+
+    // Lọc lớp
+    if (classVal !== "ALL") {
+      list = list.filter(s => s.lop === classVal);
+    }
+
+    // Sắp xếp
+    list.sort((a, b) => {
+      if (sortVal === "score_desc") return (b.score || 0) - (a.score || 0);
+      if (sortVal === "score_asc") return (a.score || 0) - (b.score || 0);
+      if (sortVal === "time_desc") return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+      if (sortVal === "name_asc") return (a.ho_ten || "").localeCompare(b.ho_ten || "");
+      return 0;
+    });
+
+    filteredQuizSubmissions = list;
+    renderQuizStats();
+    renderQuizTable();
+  }
+
+  function renderQuizStats() {
+    const total = currentQuizSubmissions.length;
+    document.getElementById("quiz-stat-total").textContent = total;
+
+    if (total === 0) {
+      document.getElementById("quiz-stat-avg").textContent = "0.0";
+      document.getElementById("quiz-stat-passed").textContent = "0%";
+      document.getElementById("quiz-stat-highest").textContent = "0.0";
+      return;
+    }
+
+    const scores = currentQuizSubmissions.map(s => Number(s.score) || 0);
+    const sum = scores.reduce((acc, v) => acc + v, 0);
+    const avg = Math.round((sum / total) * 10) / 10;
+    const passedCount = scores.filter(s => s >= 5.0).length;
+    const passPct = Math.round((passedCount / total) * 100);
+    const highest = Math.max(...scores);
+
+    document.getElementById("quiz-stat-avg").textContent = avg.toFixed(1);
+    document.getElementById("quiz-stat-passed").textContent = `${passPct}%`;
+    document.getElementById("quiz-stat-highest").textContent = highest.toFixed(1);
+  }
+
+  function renderQuizTable() {
+    const tbody = document.getElementById("quiz-table-body");
+    if (!tbody) return;
+
+    if (filteredQuizSubmissions.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="9" class="py-12 text-center text-slate-400">
+            Không tìm thấy bài thi trắc nghiệm nào phù hợp bộ lọc.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = filteredQuizSubmissions.map((s, idx) => {
+      const score = Number(s.score) || 0;
+      let scoreBadge = "";
+      let rankText = "";
+      if (score >= 8.0) {
+        scoreBadge = `<span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-extrabold font-mono text-sm">${score.toFixed(1)}</span>`;
+        rankText = `<span class="text-emerald-700 font-semibold">Giỏi / Xuất sắc</span>`;
+      } else if (score >= 5.0) {
+        scoreBadge = `<span class="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800 font-extrabold font-mono text-sm">${score.toFixed(1)}</span>`;
+        rankText = `<span class="text-amber-700 font-semibold">Đạt chuẩn</span>`;
+      } else {
+        scoreBadge = `<span class="px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800 font-extrabold font-mono text-sm">${score.toFixed(1)}</span>`;
+        rankText = `<span class="text-rose-600 font-semibold">Chưa đạt</span>`;
+      }
+
+      const mins = Math.floor((s.time_spent_seconds || 0) / 60);
+      const secs = (s.time_spent_seconds || 0) % 60;
+      const timeStr = `${mins}p ${secs}s`;
+
+      const dateStr = s.created_at ? new Date(s.created_at).toLocaleString("vi-VN") : "N/A";
+
+      return `
+        <tr class="hover:bg-slate-50 transition-colors">
+          <td class="py-3 px-4 font-semibold text-slate-400">${idx + 1}</td>
+          <td class="py-3 px-4 font-mono font-bold text-slate-800">${escapeHtml(s.mssv)}</td>
+          <td class="py-3 px-4 font-semibold text-slate-900">${escapeHtml(s.ho_ten)}</td>
+          <td class="py-3 px-4 font-medium text-slate-600">${escapeHtml(s.lop)}</td>
+          <td class="py-3 px-4 text-center">${scoreBadge}</td>
+          <td class="py-3 px-4 text-center font-semibold text-slate-700">${s.correct_count || 0} / ${s.total_questions || 40}</td>
+          <td class="py-3 px-4 text-center font-mono text-slate-500">${timeStr}</td>
+          <td class="py-3 px-4 text-center">${rankText}</td>
+          <td class="py-3 px-4 text-right text-slate-400 font-mono">${dateStr}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function exportQuizCSV() {
+    if (filteredQuizSubmissions.length === 0) {
+      alert("Không có dữ liệu bài thi để xuất CSV.");
+      return;
+    }
+
+    const headers = [
+      "STT",
+      "MSSV",
+      "Họ và tên",
+      "Lớp",
+      "Điểm (Thang 10)",
+      "Số câu đúng",
+      "Tổng số câu",
+      "Thời gian làm bài",
+      "Thời gian nộp"
+    ];
+
+    const rows = filteredQuizSubmissions.map((s, idx) => {
+      const mins = Math.floor((s.time_spent_seconds || 0) / 60);
+      const secs = (s.time_spent_seconds || 0) % 60;
+      const timeStr = `${mins} phút ${secs} giây`;
+      const dateStr = s.created_at ? new Date(s.created_at).toLocaleString("vi-VN") : "";
+
+      return [
+        idx + 1,
+        `"${escapeCSV(s.mssv)}"`,
+        `"${escapeCSV(s.ho_ten)}"`,
+        `"${escapeCSV(s.lop)}"`,
+        s.score,
+        s.correct_count || 0,
+        s.total_questions || 40,
+        `"${escapeCSV(timeStr)}"`,
+        `"${escapeCSV(dateStr)}"`
+      ].join(",");
+    });
+
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const dateStamp = new Date().toISOString().split("T")[0];
+    link.href = url;
+    link.download = `bang_diem_trac_nghiem_han_${dateStamp}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 
   // 15. Khởi tạo sự kiện khi DOM nạp xong
@@ -918,14 +1142,23 @@
     document.getElementById("tab-register-btn")?.addEventListener("click", () => setAuthMode(true));
     document.getElementById("login-form")?.addEventListener("submit", handleLogin);
     document.getElementById("logout-btn")?.addEventListener("click", handleLogout);
-    document.getElementById("refresh-btn")?.addEventListener("click", loadSubmissions);
+    document.getElementById("refresh-btn")?.addEventListener("click", () => {
+      loadSubmissions();
+      loadQuizSubmissions();
+    });
     document.getElementById("export-csv-btn")?.addEventListener("click", handleExportCSV);
     document.getElementById("save-config-btn")?.addEventListener("click", handleSaveConfig);
     document.getElementById("save-note-btn")?.addEventListener("click", handleSaveNote);
 
-    // Search and filter listeners
+    // Search and filter listeners (Survey)
     document.getElementById("search-input")?.addEventListener("input", applyFilters);
     document.getElementById("filter-class")?.addEventListener("change", applyFilters);
+
+    // Quiz module listeners
+    document.getElementById("quiz-search-input")?.addEventListener("input", applyQuizFilters);
+    document.getElementById("quiz-class-filter")?.addEventListener("change", applyQuizFilters);
+    document.getElementById("quiz-sort-select")?.addEventListener("change", applyQuizFilters);
+    document.getElementById("quiz-export-csv-btn")?.addEventListener("click", exportQuizCSV);
 
     // Toggle shortlist filter
     const toggleShortlistBtn = document.getElementById("toggle-shortlist-btn");

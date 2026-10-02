@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Kiểm tra trắc nghiệm Thực hành Hàn - Ngành Cơ khí</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Supabase JS Client CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .palette-btn.active {
+      background-color: #2563eb;
+      color: #ffffff;
+      border-color: #1d4ed8;
+      font-weight: 700;
+    }
+    .palette-btn.current {
+      ring: 2px solid #f59e0b;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 antialiased pb-20 select-none">
+
+  <!-- TOP HEADER -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-2.5">
+        <span class="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+          ⚡
+        </span>
+        <div>
+          <h1 class="text-sm sm:text-base font-bold text-slate-900 line-clamp-1">
+            Kiểm tra Thực hành Hàn
+          </h1>
+          <p class="text-[11px] text-slate-500 hidden sm:block">Học phần: Thực hành Hàn (Ngành Cơ khí / CĐT) - 40 câu / 30 phút</p>
+        </div>
+      </div>
+
+      <!-- TIMER DISPLAY (Hiện khi bắt đầu thi) -->
+      <div id="header-timer-container" class="hidden flex items-center space-x-3">
+        <div class="text-right">
+          <div class="text-[10px] uppercase font-bold text-slate-400">Thời gian còn</div>
+          <div id="countdown-timer" class="text-lg sm:text-xl font-extrabold text-blue-600 font-mono tracking-wider">
+            30:00
+          </div>
+        </div>
+        <div class="w-10 h-10 rounded-full border-4 border-blue-100 border-t-blue-600 animate-spin flex items-center justify-center" id="timer-spinner" style="animation-duration: 60s;"></div>
+      </div>
+    </div>
+
+    <!-- PROGRESS BAR THỜI GIAN / TIẾN ĐỘ -->
+    <div id="header-progress-wrap" class="hidden w-full bg-slate-200 h-1.5">
+      <div id="timer-progress-bar" class="bg-blue-600 h-1.5 transition-all duration-1000 w-full"></div>
+    </div>
+  </header>
+
+  <!-- MAIN WRAPPER -->
+  <main class="max-w-4xl mx-auto px-4 py-6">
+
+    <!-- ======================================================== -->
+    <!-- BƯỚC 1: FORM XÁC THỰC SINH VIÊN & MẬT MÃ (LOGIN CARD) -->
+    <!-- ======================================================== -->
+    <section id="auth-section" class="max-w-lg mx-auto bg-white rounded-3xl p-6 sm:p-8 shadow-md border border-slate-200 my-4 animate-fade-in">
+      <div class="text-center mb-6">
+        <span class="inline-flex items-center space-x-1 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold mb-2">
+          <span>📝</span>
+          <span>Bài kiểm tra trắc nghiệm 30 phút</span>
+        </span>
+        <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+          Nhập thông tin dự thi
+        </h2>
+        <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+          Sinh viên vui lòng nhập chính xác MSSV, Lớp và Mật mã bí mật do Giảng viên cung cấp tại xưởng.
+        </p>
+      </div>
+
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 text-xs text-amber-900 space-y-1.5">
+        <p class="font-bold flex items-center space-x-1.5 text-amber-800">
+          <span>⚠️</span>
+          <span>QUY CHẾ THI THỰC HÀNH:</span>
+        </p>
+        <ul class="list-disc list-inside space-y-1 pl-1 text-[11px] text-amber-800">
+          <li>Bài thi gồm <strong>40 câu trắc nghiệm</strong>, làm trong <strong>30 phút</strong>.</li>
+          <li>Khi hết 30 phút, hệ thống sẽ <strong>tự động khóa bài và nộp</strong>.</li>
+          <li>Mỗi MSSV chỉ được gửi kết quả <strong>01 lần duy nhất</strong>.</li>
+          <li>Sau khi nộp bài, hệ thống chỉ hiển thị <strong>Điểm số đạt được</strong>.</li>
+        </ul>
+      </div>
+
+      <form id="quiz-auth-form" class="space-y-4">
+        <!-- MSSV -->
+        <div>
+          <label for="student-mssv" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            Mã số sinh viên (MSSV) <span class="text-rose-500">*</span>
+          </label>
+          <input 
+            type="text" 
+            id="student-mssv" 
+            required 
+            placeholder="VD: 26002050" 
+            class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 text-sm font-semibold uppercase transition-all"
+          >
+        </div>
+
+        <!-- Họ và tên -->
+        <div>
+          <label for="student-name" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            Họ và tên sinh viên <span class="text-rose-500">*</span>
+          </label>
+          <input 
+            type="text" 
+            id="student-name" 
+            required 
+            placeholder="VD: Nguyễn Văn An" 
+            class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 text-sm font-medium transition-all"
+          >
+        </div>
+
+        <!-- Lớp -->
+        <div>
+          <label for="student-class" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            Lớp học phần / Lớp sinh hoạt <span class="text-rose-500">*</span>
+          </label>
+          <div class="relative">
+            <input 
+              type="text" 
+              id="student-class" 
+              required 
+              list="quiz-class-list"
+              placeholder="VD: 26C1-CĐT1" 
+              class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 text-sm font-semibold uppercase transition-all"
+            >
+            <datalist id="quiz-class-list"></datalist>
+          </div>
+        </div>
+
+        <!-- Mật mã 8 ký tự bí mật -->
+        <div>
+          <label for="quiz-passcode" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            Mật mã phòng thi (8 ký tự do GV cho tại lớp) <span class="text-rose-500">*</span>
+          </label>
+          <input 
+            type="text" 
+            id="quiz-passcode" 
+            required 
+            maxlength="8"
+            autocomplete="off"
+            placeholder="Nhập mã 8 ký tự bí mật" 
+            class="w-full px-4 py-3 rounded-xl border border-amber-300 bg-amber-50/30 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-sm font-mono font-bold tracking-widest text-center uppercase transition-all"
+          >
+          <p class="text-[11px] text-slate-400 mt-1">Giảng viên sẽ đọc hoặc chiếu mã bí mật trực tiếp tại xưởng.</p>
+        </div>
+
+        <!-- Error alert -->
+        <div id="auth-error" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold"></div>
+
+        <button 
+          type="submit" 
+          id="start-quiz-btn"
+          class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-base rounded-xl shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center space-x-2 mt-4"
+        >
+          <span id="start-btn-text">Bắt đầu làm bài kiểm tra</span>
+          <span id="start-btn-spinner" class="hidden">
+            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+          </span>
+        </button>
+      </form>
+    </section>
+
+
+    <!-- ======================================================== -->
+    <!-- BƯỚC 2: GIAO DIỆN BÀI THI (40 CÂU & PALETTE) -->
+    <!-- ======================================================== -->
+    <section id="quiz-section" class="hidden space-y-6">
+
+      <!-- THÔNG TIN THÍ SINH & BẢNG ĐIỀU HƯỚNG CÂU HỎI (PALETTE) -->
+      <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 sticky top-16 z-30">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-2">
+          <div class="flex items-center space-x-2 text-xs">
+            <span class="font-bold text-slate-900" id="display-student-name">Sinh viên</span>
+            <span class="text-slate-400">•</span>
+            <span class="text-slate-600 font-mono" id="display-student-mssv">MSSV</span>
+            <span class="text-slate-400">•</span>
+            <span class="text-blue-600 font-semibold" id="display-student-class">Lớp</span>
+          </div>
+          <div class="text-xs font-semibold text-slate-600 flex items-center space-x-2">
+            <span>Tiến độ:</span>
+            <span id="answered-counter" class="text-blue-600 font-bold">0 / 40 câu</span>
+          </div>
+        </div>
+
+        <!-- BẢNG CHỌN NHANH 40 CÂU (PALETTE) -->
+        <div class="mt-3">
+          <p class="text-[11px] text-slate-400 mb-1.5 font-medium">Bảng câu hỏi (bấm để chuyển nhanh tới câu):</p>
+          <div id="palette-grid" class="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-20 gap-1.5 max-h-28 overflow-y-auto p-1">
+            <!-- Render 1..40 buttons bằng JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- DANH SÁCH 40 CÂU HỎI -->
+      <form id="quiz-questions-form" class="space-y-5">
+        <div id="questions-list-container" class="space-y-5">
+          <!-- Render 40 câu hỏi bằng JS -->
+        </div>
+
+        <!-- KHỐI NỘP BÀI -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 text-center">
+          <div id="submit-warning" class="hidden mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs font-semibold">
+            ⚠️ Bạn còn <span id="unanswered-count-text" class="font-bold text-rose-600">0</span> câu chưa hoàn thành. Hãy kiểm tra lại trước khi nộp!
+          </div>
+
+          <button 
+            type="button" 
+            id="finish-quiz-btn"
+            class="w-full sm:w-auto min-w-[260px] px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-extrabold text-base rounded-xl shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center mx-auto space-x-2"
+          >
+            <span id="submit-btn-text">Nộp bài kiểm tra</span>
+            <span id="submit-btn-spinner" class="hidden">
+              <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+            </span>
+          </button>
+          <p class="text-[11px] text-slate-400 mt-2.5">
+            Bài thi sẽ được chấm tự động và ghi nhận điểm số chính thức.
+          </p>
+        </div>
+      </form>
+
+    </section>
+
+
+    <!-- ======================================================== -->
+    <!-- BƯỚC 3: MÀN HÌNH KẾT QUẢ (CHỈ HIỆN ĐIỂM SỐ - BẢO MẬT) -->
+    <!-- ======================================================== -->
+    <section id="result-section" class="hidden max-w-xl mx-auto bg-white rounded-3xl p-8 sm:p-10 shadow-lg border border-slate-200 text-center animate-fade-in my-6">
+      <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner mb-4">
+        🏆
+      </div>
+      <h2 class="text-2xl sm:text-3xl font-black text-slate-900 mb-1">
+        Hoàn thành bài kiểm tra!
+      </h2>
+      <p class="text-xs sm:text-sm text-slate-500 mb-6">
+        Bài làm của bạn đã được nộp thành công và ghi nhận vào hệ thống quản trị của Giảng viên.
+      </p>
+
+      <!-- THÔNG TIN THÍ SINH TỔNG KẾT -->
+      <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200 text-left text-xs space-y-1.5 mb-6">
+        <div class="flex justify-between"><span class="text-slate-500">Họ và tên:</span><span id="res-student-name" class="font-bold text-slate-800"></span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Mã số sinh viên:</span><span id="res-student-mssv" class="font-mono font-bold text-slate-800"></span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Lớp:</span><span id="res-student-class" class="font-bold text-blue-600"></span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Thời gian làm bài:</span><span id="res-time-spent" class="font-semibold text-slate-700"></span></div>
+      </div>
+
+      <!-- ĐIỂM SỐ CHÍNH THỨC -->
+      <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-6 text-white shadow-xl shadow-blue-500/20 mb-6">
+        <p class="text-xs uppercase tracking-widest text-blue-200 font-bold mb-1">KẾT QUẢ ĐIỂM SỐ</p>
+        <div class="flex items-baseline justify-center space-x-1">
+          <span id="res-final-score" class="text-5xl sm:text-6xl font-black tracking-tight font-mono">0.0</span>
+          <span class="text-2xl text-blue-200 font-bold">/ 10</span>
+        </div>
+        <div class="mt-3 pt-3 border-t border-white/20 flex justify-around text-xs text-blue-100">
+          <div>Số câu đúng: <strong id="res-correct-count" class="text-white text-sm">0</strong> / 40 câu</div>
+          <div>Tỷ lệ: <strong id="res-percent" class="text-white text-sm">0%</strong></div>
+        </div>
+      </div>
+
+      <!-- XẾP LOẠI & LỜI NHẮN -->
+      <div id="res-ranking-box" class="p-3.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold mb-6">
+        Xếp loại: <span id="res-rank-text" class="text-blue-700 font-bold">Đạt</span>
+      </div>
+
+      <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-[11px] leading-relaxed">
+        🔒 <strong>Lưu ý bảo mật:</strong> Để đảm bảo tính công bằng và bảo mật đề thi cho các ca học tiếp theo, hệ thống không công khai chi tiết đáp án của từng câu. Mọi thắc mắc về điểm số, sinh viên liên hệ trực tiếp Giảng viên bộ môn tại lớp.
+      </div>
+    </section>
+
+  </main>
+
+  <!-- CONFIRMATION MODAL TRƯỚC KHI NỘP BÀI -->
+  <div id="confirm-submit-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 text-center animate-scale-up">
+      <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto text-2xl mb-3">
+        ⚠️
+      </div>
+      <h3 class="text-lg font-bold text-slate-900 mb-1">Xác nhận nộp bài?</h3>
+      <p id="modal-warning-text" class="text-xs text-slate-600 leading-relaxed mb-5">
+        Bạn có chắc chắn muốn nộp bài thi? Sau khi nộp, bạn sẽ không thể chỉnh sửa lại các câu trả lời.
+      </p>
+      <div class="flex space-x-3">
+        <button 
+          type="button" 
+          onclick="closeConfirmModal()" 
+          class="flex-1 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-semibold text-xs hover:bg-slate-50 transition-all"
+        >
+          Xem lại bài
+        </button>
+        <button 
+          type="button" 
+          id="confirm-submit-action-btn"
+          class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all"
+        >
+          Nộp bài ngay
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOAD APPLICATION SCRIPTS -->
+  <script src="config.js"></script>
+  <script src="quiz-questions.js"></script>
+  <script src="quiz.js"></script>
+</body>
+</html>
