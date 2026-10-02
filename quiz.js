@@ -438,10 +438,13 @@
       try {
         const { error: insertErr } = await client
           .from("quiz_submissions")
-          .insert([payload], { returning: "minimal" });
+          .insert([payload]);
 
         if (insertErr) {
           console.error("Lỗi lưu Supabase:", insertErr);
+          if (insertErr.code === "23505") {
+            alert(`Mã số sinh viên ${currentStudent.mssv} đã hoàn thành bài thi trước đó!`);
+          }
         } else {
           console.log("Đã lưu kết quả thi lên Supabase thành công!");
         }
