@@ -435,13 +435,21 @@
             ${s.tagged_for_review ? '⭐ Cần tìm hiểu' : '○ Chưa đánh dấu'}
           </button>
         </td>
-        <td class="py-3 px-4 text-right">
+        <td class="py-3 px-4 text-right space-x-1.5 whitespace-nowrap">
           <button 
             type="button"
             onclick="openStudentModal('${s.id}')"
             class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl font-semibold text-xs transition-all"
           >
             Chi tiết
+          </button>
+          <button 
+            type="button"
+            onclick="deleteSurveySubmission('${s.id}')"
+            class="px-2 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-semibold text-xs transition-all"
+            title="Xóa phiếu này"
+          >
+            🗑️
           </button>
         </td>
       `;
@@ -1096,6 +1104,26 @@
           <td class="py-3 px-4 text-center font-mono text-slate-500">${timeStr}</td>
           <td class="py-3 px-4 text-center">${rankText}</td>
           <td class="py-3 px-4 text-right text-slate-400 font-mono">${dateStr}</td>
+          <td class="py-3 px-4 text-center space-x-1.5 whitespace-nowrap">
+            <button 
+              type="button"
+              onclick="openEditQuizModal('${escapeHtml(s.id || s.mssv)}')" 
+              class="px-2.5 py-1 text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg border border-blue-200 transition-all inline-flex items-center space-x-1"
+              title="Chỉnh sửa thông tin dòng này"
+            >
+              <span>✏️</span>
+              <span>Sửa</span>
+            </button>
+            <button 
+              type="button"
+              onclick="deleteQuizSubmission('${escapeHtml(s.id || s.mssv)}')" 
+              class="px-2.5 py-1 text-xs font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg border border-rose-200 transition-all inline-flex items-center space-x-1"
+              title="Xóa dòng này"
+            >
+              <span>🗑️</span>
+              <span>Xóa</span>
+            </button>
+          </td>
         </tr>
       `;
     }).join("");
@@ -1151,6 +1179,179 @@
     URL.revokeObjectURL(url);
   }
 
+  // =========================================================================
+  // 17. CHỨC NĂNG SỬA & XÓA BÀI THI TRẮC NGHIỆM XƯỞNG HÀN
+  // =========================================================================
+  window.openEditQuizModal = function (identifier) {
+    const item = currentQuizSubmissions.find(s => (s.id && s.id === identifier) || s.mssv === identifier);
+    if (!item) return;
+
+    document.getElementById("edit-quiz-id").value = item.id || "";
+    document.getElementById("edit-quiz-original-mssv").value = item.mssv || "";
+    document.getElementById("edit-quiz-mssv").value = item.mssv || "";
+    document.getElementById("edit-quiz-name").value = item.ho_ten || "";
+    document.getElementById("edit-quiz-class").value = item.lop || "";
+    document.getElementById("edit-quiz-score").value = item.score !== undefined ? item.score : 0;
+    document.getElementById("edit-quiz-correct").value = item.correct_count !== undefined ? item.correct_count : 0;
+
+    document.getElementById("edit-quiz-modal").classList.remove("hidden");
+  };
+
+  window.closeEditQuizModal = function () {
+    document.getElementById("edit-quiz-modal").classList.add("hidden");
+  };
+
+  async function handleSaveEditQuiz(e) {
+    e.preventDefault();
+    const id = document.getElementById("edit-quiz-id").value;
+    const origMssv = document.getElementById("edit-quiz-original-mssv").value;
+    const newMssv = document.getElementById("edit-quiz-mssv").value.trim().toUpperCase();
+    const newName = document.getElementById("edit-quiz-name").value.trim();
+    const newClass = document.getElementById("edit-quiz-class").value.trim().toUpperCase();
+    const newScore = parseFloat(document.getElementById("edit-quiz-score").value) || 0;
+    const newCorrect = parseInt(document.getElementById("edit-quiz-correct").value) || 0;
+
+    const saveBtn = document.getElementById("save-edit-quiz-btn");
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Đang lưu...";
+
+    try {
+      const client = getSupabaseClient();
+      if (client) {
+        let query = client.from("quiz_submissions").update({
+          mssv: newMssv,
+          ho_ten: newName,
+          lop: newClass,
+          score: newScore,
+          correct_count: newCorrect
+        });
+
+        if (id) {
+          query = query.eq("id", id);
+        } else {
+          query = query.eq("mssv", origMssv);
+        }
+
+        const { error } = await query;
+        if (error) {
+          console.error("Lỗi cập nhật Supabase:", error);
+          alert("Lỗi khi lưu CSDL: " + error.message);
+        }
+      }
+
+      // Cập nhật mảng local trong bộ nhớ
+      const index = currentQuizSubmissions.findIndex(s => (id && s.id === id) || s.mssv === origMssv);
+      if (index !== -1) {
+        currentQuizSubmissions[index].mssv = newMssv;
+        currentQuizSubmissions[index].ho_ten = newName;
+        currentQuizSubmissions[index].lop = newClass;
+        currentQuizSubmissions[index].score = newScore;
+        currentQuizSubmissions[index].correct_count = newCorrect;
+      }
+
+      // Cập nhật localStorage dự phòng
+      try {
+        const localList = JSON.parse(localStorage.getItem("DEMO_QUIZ_SUBMISSIONS") || "[]");
+        const locIdx = localList.findIndex(s => (id && s.id === id) || s.mssv === origMssv);
+        if (locIdx !== -1) {
+          localList[locIdx].mssv = newMssv;
+          localList[locIdx].ho_ten = newName;
+          localList[locIdx].lop = newClass;
+          localList[locIdx].score = newScore;
+          localList[locIdx].correct_count = newCorrect;
+          localStorage.setItem("DEMO_QUIZ_SUBMISSIONS", JSON.stringify(localList));
+        }
+      } catch (err) {}
+
+      closeEditQuizModal();
+      populateQuizClassFilter();
+      applyQuizFilters();
+      alert("Đã cập nhật thông tin sinh viên thành công!");
+    } catch (err) {
+      console.error(err);
+      alert("Không thể lưu: " + err.message);
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "💾 Lưu cập nhật";
+    }
+  }
+
+  window.deleteQuizSubmission = async function (identifier) {
+    const item = currentQuizSubmissions.find(s => (s.id && s.id === identifier) || s.mssv === identifier);
+    if (!item) return;
+
+    const confirmed = confirm(`Bạn có chắc chắn muốn XÓA bài thi của sinh viên:\n- Họ và tên: ${item.ho_ten}\n- MSSV: ${item.mssv}\n- Lớp: ${item.lop}\n- Điểm: ${item.score} / 10\n\nThao tác này sẽ xóa vĩnh viễn dòng này khỏi hệ thống!`);
+    if (!confirmed) return;
+
+    try {
+      const client = getSupabaseClient();
+      if (client) {
+        let query = client.from("quiz_submissions").delete();
+        if (item.id) {
+          query = query.eq("id", item.id);
+        } else {
+          query = query.eq("mssv", item.mssv);
+        }
+        const { error } = await query;
+        if (error) {
+          console.error("Lỗi xóa từ Supabase:", error);
+          alert("Lỗi khi xóa trên CSDL: " + error.message);
+        }
+      }
+
+      // Xóa khỏi mảng dữ liệu bộ nhớ
+      currentQuizSubmissions = currentQuizSubmissions.filter(s => (item.id ? s.id !== item.id : s.mssv !== item.mssv));
+
+      // Xóa khỏi localStorage dự phòng
+      try {
+        let localList = JSON.parse(localStorage.getItem("DEMO_QUIZ_SUBMISSIONS") || "[]");
+        localList = localList.filter(s => (item.id ? s.id !== item.id : s.mssv !== item.mssv));
+        localStorage.setItem("DEMO_QUIZ_SUBMISSIONS", JSON.stringify(localList));
+      } catch (err) {}
+
+      populateQuizClassFilter();
+      applyQuizFilters();
+      alert(`Đã xóa thành công bài thi của sinh viên ${item.ho_ten} (${item.mssv})!`);
+    } catch (err) {
+      console.error(err);
+      alert("Không thể xóa: " + err.message);
+    }
+  };
+
+  // Xóa phiếu khảo sát (Survey)
+  window.deleteSurveySubmission = async function (id) {
+    const item = currentSubmissions.find(s => s.id === id);
+    if (!item) return;
+
+    const confirmed = confirm(`Bạn có chắc chắn muốn XÓA phiếu khảo sát của sinh viên:\n- Họ và tên: ${item.ho_ten}\n- MSSV: ${item.mssv}\n- Lớp: ${item.lop}\n\nThao tác này sẽ xóa vĩnh viễn phiếu này khỏi hệ thống!`);
+    if (!confirmed) return;
+
+    try {
+      const client = getSupabaseClient();
+      if (client) {
+        const { error } = await client.from("submissions").delete().eq("id", id);
+        if (error) {
+          console.error("Lỗi xóa Supabase:", error);
+          alert("Lỗi khi xóa CSDL: " + error.message);
+        }
+      }
+
+      currentSubmissions = currentSubmissions.filter(s => s.id !== id);
+      try {
+        let localList = JSON.parse(localStorage.getItem("DEMO_SUBMISSIONS") || "[]");
+        localList = localList.filter(s => s.id !== id);
+        localStorage.setItem("DEMO_SUBMISSIONS", JSON.stringify(localList));
+      } catch (err) {}
+
+      populateClassFilter();
+      applyFilters();
+      alert(`Đã xóa thành công phiếu khảo sát của sinh viên ${item.ho_ten}!`);
+    } catch (err) {
+      console.error(err);
+      alert("Không thể xóa: " + err.message);
+    }
+  };
+
   // 15. Khởi tạo sự kiện khi DOM nạp xong
   document.addEventListener("DOMContentLoaded", () => {
     // Auth listeners
@@ -1165,6 +1366,9 @@
     document.getElementById("export-csv-btn")?.addEventListener("click", handleExportCSV);
     document.getElementById("save-config-btn")?.addEventListener("click", handleSaveConfig);
     document.getElementById("save-note-btn")?.addEventListener("click", handleSaveNote);
+
+    // Edit quiz modal form listener
+    document.getElementById("edit-quiz-form")?.addEventListener("submit", handleSaveEditQuiz);
 
     // Search and filter listeners (Survey)
     document.getElementById("search-input")?.addEventListener("input", applyFilters);

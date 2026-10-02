@@ -400,11 +400,12 @@
                   <th class="py-3.5 px-4 text-center">Thời gian làm</th>
                   <th class="py-3.5 px-4 text-center">Xếp loại</th>
                   <th class="py-3.5 px-4 text-right">Ngày giờ nộp</th>
+                  <th class="py-3.5 px-4 text-center">Thao tác</th>
                 </tr>
               </thead>
               <tbody id="quiz-table-body" class="divide-y divide-slate-100 font-normal">
                 <tr>
-                  <td colspan="9" class="py-12 text-center text-slate-400">
+                  <td colspan="10" class="py-12 text-center text-slate-400">
                     Đang tải danh sách điểm kiểm tra...
                   </td>
                 </tr>
@@ -585,6 +586,114 @@
           Lưu cấu hình
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 5. EDIT QUIZ SUBMISSION MODAL              -->
+  <!-- ========================================== -->
+  <div id="edit-quiz-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto animate-scale-up">
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div class="flex items-center space-x-2">
+          <span class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">
+            ✏️
+          </span>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Chỉnh sửa thông tin bài thi</h3>
+            <p class="text-xs text-slate-500">Cập nhật thông tin khi sinh viên điền sai</p>
+          </div>
+        </div>
+        <button 
+          onclick="closeEditQuizModal()" 
+          class="w-8 h-8 rounded-full hover:bg-slate-200 text-slate-500 flex items-center justify-center text-lg transition-all"
+        >
+          ✕
+        </button>
+      </div>
+
+      <form id="edit-quiz-form" class="p-6 space-y-4 text-xs">
+        <input type="hidden" id="edit-quiz-id">
+        <input type="hidden" id="edit-quiz-original-mssv">
+
+        <!-- MSSV -->
+        <div>
+          <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Mã số sinh viên (MSSV) *</label>
+          <input 
+            type="text" 
+            id="edit-quiz-mssv" 
+            required 
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono font-bold uppercase focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-xs"
+          >
+        </div>
+
+        <!-- Họ và tên -->
+        <div>
+          <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Họ và tên *</label>
+          <input 
+            type="text" 
+            id="edit-quiz-name" 
+            required 
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-xs"
+          >
+        </div>
+
+        <!-- Lớp -->
+        <div>
+          <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Lớp học phần / Lớp sinh hoạt *</label>
+          <input 
+            type="text" 
+            id="edit-quiz-class" 
+            required 
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-semibold uppercase focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-xs"
+          >
+        </div>
+
+        <!-- Điểm số & Số câu đúng -->
+        <div class="grid grid-cols-2 gap-3 pt-1">
+          <div>
+            <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Điểm số (Thang 10)</label>
+            <input 
+              type="number" 
+              step="0.01" 
+              min="0" 
+              max="10" 
+              id="edit-quiz-score" 
+              required 
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono font-bold text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-xs"
+            >
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Số câu đúng (trên 40)</label>
+            <input 
+              type="number" 
+              min="0" 
+              max="40" 
+              id="edit-quiz-correct" 
+              required 
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-xs"
+            >
+          </div>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="flex justify-end space-x-2.5 pt-3 border-t border-slate-100">
+          <button 
+            type="button" 
+            onclick="closeEditQuizModal()" 
+            class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold transition-all"
+          >
+            Hủy bỏ
+          </button>
+          <button 
+            type="submit" 
+            id="save-edit-quiz-btn" 
+            class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold shadow-md shadow-blue-500/20 transition-all flex items-center space-x-1.5"
+          >
+            <span>💾 Lưu cập nhật</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
